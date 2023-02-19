@@ -39,11 +39,21 @@ class GameScene: SKScene {
     var documentationButton: SKLabelNode!
     // Highest pay label
     var highestPayoutLbl: SKLabelNode!
-    
+    // Global Jackpot label
+    var globalJackpotLbl: SKLabelNode!
+
     var highestPay: Int = 0
     {
         didSet{
             highestPayoutLbl.text = "Highest Payout: \(highestPay)"
+        }
+    }
+    
+    var globalJackpot: Int = 5000
+    {
+        didSet
+        {
+            globalJackpotLbl.text = "Global Jackpot: \(globalJackpot)"
         }
     }
     
@@ -230,14 +240,24 @@ class GameScene: SKScene {
         self.addChild(documentationButton)
         
         // Highest Payout Label
-        highestPayoutLbl = SKLabelNode(text: "Highest Payout: 0")
+        highestPayoutLbl = SKLabelNode(text: "Highest Pay: 0")
         highestPayoutLbl.position = CGPoint(x: -260, y: -520)
         highestPayoutLbl.zPosition = 1
         highestPayoutLbl.horizontalAlignmentMode = SKLabelHorizontalAlignmentMode.left
         highestPayoutLbl.fontName = labelFontName
-        highestPayoutLbl.fontSize = CGFloat(30)
+        highestPayoutLbl.fontSize = CGFloat(28)
         highestPayoutLbl.fontColor = UIColor.systemOrange
         self.addChild(highestPayoutLbl)
+        
+        // Global Jackpot Label
+        globalJackpotLbl = SKLabelNode(text: "Global Jackpot: 5000")
+        globalJackpotLbl.position = CGPoint(x: -260, y: -485)
+        globalJackpotLbl.zPosition = 1
+        globalJackpotLbl.horizontalAlignmentMode = SKLabelHorizontalAlignmentMode.left
+        globalJackpotLbl.fontName = labelFontName
+        globalJackpotLbl.fontSize = CGFloat(28)
+        globalJackpotLbl.fontColor = SKColor.systemOrange
+        self.addChild(globalJackpotLbl)
         
         // 3 spins
         spin_1 = SKSpriteNode(imageNamed: "seven")
@@ -529,7 +549,7 @@ class GameScene: SKScene {
                 
                 let wheelValueTest: SKAction = SKAction.run
                 {
-                    self.valueTest()
+                    self.testingValues()
                     self.clearState()
                 }
                 self.run(SKAction.sequence([
@@ -566,13 +586,6 @@ class GameScene: SKScene {
             func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
                 for t in touches { self.touchUp(atPoint: t.location(in: self)) }
             }
-            
-            
-            func update(_ currentTime: TimeInterval) {
-                
-            }
-            
-            
         }
     
     func spinWheel(wheelNo: Int) -> Void
@@ -676,8 +689,9 @@ class GameScene: SKScene {
         //            present(alert, animated: true, completion: nil)
     }
     
-    func valueTest()
+    func testingValues()
     {
+        let firebaseStore = FirebaseManager()
         //If win
         if(blank < 1)
         {
@@ -735,6 +749,11 @@ class GameScene: SKScene {
             {
                 winnerPaid = bet * 5;
             }
+            if(winnerPaid > highestPay)
+            {
+                highestPay = winnerPaid
+                firebaseStore.updateGlobalData(key: "highest_pay", value: highestPay)
+            }
             credit += winnerPaid
         }
         //loose
@@ -743,6 +762,9 @@ class GameScene: SKScene {
             winPad.text = "Looser...!!"
             credit -= bet
             winnerPaid = 0
+            
+            globalJackpot += (Int)(bet / 15)
+            firebaseStore.updateGlobalData(key: "global_jackpot", value: globalJackpot)
         }
         
         if(credit < bet)
@@ -750,4 +772,9 @@ class GameScene: SKScene {
             bet = 0;
         }
     }
+    
+    override func update(_ currentTime: TimeInterval) {
+        
+    }
+    
 }
